@@ -1,0 +1,36 @@
+{
+    "invoices": [
+        {
+            "id": "1",
+            "clientId": "1",
+            "description": "Invoice 1",
+            "amount": "5000.00",
+            "status": "paid"
+        },
+        {
+            "id": "2",
+            "clientId": "1",
+            "description": "Invoice 2",
+            "amount": "5000.00",
+            "status": "unpaid"
+        }
+    ],
+    "clients": [
+        {
+            "id": "1",
+            "name": "Client 1",
+            "address": "Address 1",
+            "city": "City 1",
+            "state": "State 1",
+            "zip": "Zip 1"
+        },
+        {
+            "id": "2",
+            "name": "Client 2",
+            "address": "Address 2",
+            "city": "City 2",
+            "state": "State 2",
+            "zip": "Zip 2"
+        }
+    ]
+}
