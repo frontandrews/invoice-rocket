@@ -73,4 +73,4 @@ https://invoice-rocket-hovuk6vy7-frontandrews.vercel.app/
 
 ### Pitfalls
 
-- Encountered issues such as Hydration Errors, differences between server and client results with Next 13's new application directory feature, which need to be looked into further.
+- I decided to use the new `next 13` application directory feature, but I faced more errors than I expected, which motivated me to keep learning more about these features, the projects I worked on with Next didn't use this feature yet.
