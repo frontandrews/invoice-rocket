@@ -1,36 +1,76 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Invoice Rocket
 
-## Getting Started
+This repository provides a solution to generate invoices using only FE technologies.
 
-First, run the development server:
+**Live Demo
+**
+https://invoice-rocket-hovuk6vy7-frontandrews.vercel.app/
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+**How to install**
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+`yarn install`
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+`yarn dev`
 
-## Learn More
+**How to generate an invoice**
 
-To learn more about Next.js, take a look at the following resources:
+- Create an account
+  - It will redirect you automatically to the dashboard page
+- Create one or more clients
+- Fill your profile by clicking on the top right menu button
+  - This you automatically fill the invoice with your data
+- Create an invoice adding items to it.
+  - Click to see the invoice
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+**Basic Features**
+- Authentication using Firebase.
+- Hooks
+- Redux
+- High Order Components
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+**Bonus features**
+- Custom Notification Toast
+- export PDF
+- export JPG
+- Protected Routes
+- Rich Text Editor
 
-## Deploy on Vercel
+### Stack
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- React
+- NextJS
+- Redux
+- Typescript
+- Javascript
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+### Possible Improvements
+
+- Integrate an API for the backend - to replace the current localStorage setup.
+- Enhance protected guards
+- Improve Home page.
+
+### Design Choices
+
+- State Management
+  - Using Redux for application state and ContextAPI specifically for notification toasts.
+- Routing
+  - next/navigation
+- Data Fetching
+  - Currently, there are no API calls; all data are managed through Redux and saved in localStorage.
+- Styling
+  - Using mainly tailwind classes with some small css
+- Performance
+  - Some components use client features, to prevent SSR issues they are been imported dynamically.
+- Error Handling
+  - I focused mainly in the login and create account
+- Testing
+  - Unfortunatly I didn't had time to write more tests, but I'm using typescript
+- Code Quality
+  - Eslint
+- User Experience
+  - I created tailored to my own needs, based on past invoices I have sent to companies, so I didn't include some features such as hours, or time, as they are not important to my use case.
+
+### Pitfalls
+
+- Encountered issues such as Hydration Errors, differences between server and client results with Next 13's new application directory feature, which need to be looked into further.
