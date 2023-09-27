@@ -2,8 +2,8 @@
 
 This repository provides a solution to generate invoices using only FE technologies.
 
-**Live Demo
-**
+**Live Demo**
+
 https://invoice-rocket-hovuk6vy7-frontandrews.vercel.app/
 
 **How to install**
