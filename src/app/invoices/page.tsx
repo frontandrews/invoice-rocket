@@ -5,7 +5,7 @@ import Heading from "@/components/common/Heading";
 import dynamic from "next/dynamic";
 import Loading from '@/components/common/LoadingSpinner'
 
-const InvoiceTable = dynamic(() => import("@/components/dashboard/InvoiceTable"), {
+const InvoiceTable = dynamic(() => import("@/app/invoices/components/InvoiceTable"), {
   ssr: false,
   loading: Loading
 });

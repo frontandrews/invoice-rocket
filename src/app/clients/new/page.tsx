@@ -3,9 +3,9 @@ import withAuth from "@/hocs/withAuth";
 import ClientForm from "@/app/clients/components/ClientForm";
 import { useRouter } from "next/navigation";
 
-function EditPage() {
+function NewClientPage() {
   const router = useRouter();
   return <ClientForm onCancel={() => router.push("/clients")} />;
 }
 
-export default withAuth(EditPage);
+export default withAuth(NewClientPage);

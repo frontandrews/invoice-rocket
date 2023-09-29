@@ -5,9 +5,9 @@ import ClientForm from "@/app/clients/components/ClientForm";
 import { useSelector } from "react-redux";
 import { useRouter, useParams } from "next/navigation";
 import { selectClientById } from "@/redux/features/client/selectors";
-import { Invoice, StoreTypes } from "@/types";
+import { StoreTypes } from "@/types";
 
-function EditPage() {
+function EditClientPage() {
   const router = useRouter();
   const { id } = useParams();
 
@@ -22,4 +22,4 @@ function EditPage() {
   );
 }
 
-export default withAuth(EditPage);
+export default withAuth(EditClientPage);

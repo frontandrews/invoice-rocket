@@ -16,13 +16,6 @@ function LoginPage() {
   const [errorCode, setErrorCode] = useState("");
   const dispatch = useDispatch();
   const router = useRouter(); 
-  // const isAuthenticated = useAuthState(app);
-
-  // useEffect(() => {
-  //   if (isAuthenticated) {
-  //     router.push('/invoices');
-  //   }
-  // }, [isAuthenticated, router])
 
   const auth = getAuth(app);
 
