@@ -1,53 +1,153 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useReducer, Reducer } from "react";
 import useFormInput from "@/hooks/useFormInput";
 import { PlusIcon, TrashIcon } from "@heroicons/react/20/solid";
 import { useRouter, useParams } from "next/navigation";
-import { CURRENCY_OPTIONS } from "@/constants";
 import { formatCurrency } from "@/utils/helper";
 import { useSelector, useDispatch } from "react-redux";
 import { addInvoice, updateInvoice } from "@/redux/features/invoice/slice";
 import { v4 as uuidv4 } from "uuid";
 import Heading from "@/components/common/Heading";
-import { StoreTypes, InvoiceItem } from "@/types";
+import { StoreTypes, InvoiceItem, Currency } from "@/types";
+import { fetchCurrencies } from "@/hooks/fetchCurrencies";
+import { STATUSES } from "@/constants";
+import { capitalizeFirstLetter } from "@/utils/helper";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
+
+const SET_FORM_DATA = "SET_FORM_DATA";
+const ADD_ITEM = "ADD_ITEM";
+const REMOVE_ITEM = "REMOVE_ITEM";
+const SET_ERRORS = "SET_ERRORS";
+const SET_NEW_ITEM = "SET_NEW_ITEM";
+const SET_CURRENCIES = "SET_CURRENCIES";
+
+enum ActionTypes {
+  SET_FORM_DATA = "SET_FORM_DATA",
+  ADD_ITEM = "ADD_ITEM",
+  REMOVE_ITEM = "REMOVE_ITEM",
+  SET_ERRORS = "SET_ERRORS",
+  SET_NEW_ITEM = "SET_NEW_ITEM",
+  SET_CURRENCIES = "SET_CURRENCIES",
+}
+
+type FormValidationError = {
+  field: string;
+  message: string;
+};
+
+type FormValidationErrors = FormValidationError[];
+
+interface InvoiceState {
+  formData: {
+    clientId: string;
+    currency: string;
+    dueDate: string;
+    details: string;
+    status: string;
+  };
+  items: InvoiceItem[];
+  errors: FormValidationErrors;
+  newItem: InvoiceItem;
+  currencies: Currency[];
+}
+
+type InvoiceActions = {
+  type: ActionTypes;
+  payload: any;
+};
 
 function InvoiceForm() {
   const router = useRouter();
-  const dispatch = useDispatch();
+  const reduxDispatch = useDispatch();
   const { id } = useParams();
+
+ 
 
   const initialValues = useSelector((state: StoreTypes) =>
     state.invoices.find((invoice) => invoice.id === id)
   );
-
   const currentDate = new Date().toISOString().slice(0, 10);
   const clientId = useFormInput<string>(initialValues?.clientId || "");
   const clients = useSelector((state: StoreTypes) => state.clients || []);
   const currency = useFormInput<string>(initialValues?.currency || "USD");
   const dueDate = useFormInput<string>(initialValues?.dueDate || currentDate);
   const details = useFormInput<string>(initialValues?.details || "");
-  const [items, setItems] = useState<InvoiceItem[]>(
-    initialValues?.items || []
-  );
-  const [newItem, setNewItem] = useState<InvoiceItem>({ description: "", value: 0 });
+  const [newItem, setNewItem] = useState<InvoiceItem>({
+    description: "",
+    value: 0,
+  });
   const status = useFormInput<string>(initialValues?.status || "unpaid");
 
-  const [errors, setErrors] = useState<string[]>([]);
+  const invoiceReducer = (state: InvoiceState, action: InvoiceActions): InvoiceState => {
+    switch (action.type) {
+      case SET_FORM_DATA:
+        return { ...state, formData: { ...state.formData, ...action.payload } };
+      case ADD_ITEM:
+        return { ...state, items: [...state.items, action.payload] };
+      case REMOVE_ITEM:
+        return {
+          ...state,
+          items: state.items.filter((_, idx) => idx !== action.payload),
+        };
+      case SET_ERRORS:
+        return { ...state, errors: action.payload };
+      case SET_NEW_ITEM:
+        return { ...state, newItem: action.payload };
+      case SET_CURRENCIES:
+        return { ...state, currencies: action.payload };
+      default:
+        return state;
+    }
+  };
 
+  const initialState: InvoiceState = {
+    formData: {
+      clientId: initialValues?.clientId || "",
+      currency: initialValues?.currency || "USD",
+      dueDate: initialValues?.dueDate || currentDate,
+      details: initialValues?.details || "",
+      status: initialValues?.status || "unpaid",
+    },
+    items: initialValues?.items || [],
+    errors: [],
+    newItem: { description: "", value: 0 },
+    currencies: [],
+  };
+
+  const [state, dispatch] = useReducer<Reducer<InvoiceState, any>>(
+    invoiceReducer,
+    initialState
+  );
+
+  useEffect(() => {
+    (async () => {
+      const fetchedCurrencies = await fetchCurrencies();
+      dispatch({ type: "SET_CURRENCIES", payload: fetchedCurrencies });
+    })();
+  }, [dispatch]);
+
+  /**
+   * Handle form submission.
+   * - Validates the form fields.
+   * - Dispatches the action to create or update an invoice.
+   * - Redirects to the invoice list page.
+   */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (items.length === 0) {
-      setErrors(["At least one item is required."]);
-      return;
-    } else if (errors.length) {
+    // Validate: Ensure at least one item is present.
+    if (state.items.length === 0) {
+      dispatch({
+        type: SET_ERRORS,
+        payload: ["At least one item is required."],
+      });
       return;
     }
 
     const formData = {
       clientId: clientId.value,
       currency: currency.value,
-      items: items,
+      items: state.items,
       dueDate: dueDate.value,
       details: details.value,
       status: status.value || "unpaid",
@@ -55,11 +155,11 @@ function InvoiceForm() {
 
     if (id) {
       // @ts-expect-error: TODO: fix this type error
-      dispatch(updateInvoice({ id, ...formData }));
+      reduxDispatch(updateInvoice({ id, ...formData }));
       router.push("/invoices");
       return;
     } else {
-      dispatch(
+      reduxDispatch(
         // @ts-expect-error: TODO: fix this type error
         addInvoice({
           id: uuidv4(),
@@ -71,43 +171,59 @@ function InvoiceForm() {
   };
 
   const removeItem = (itemIndex: number) => {
-    const newItems = [...items];
-    newItems.splice(itemIndex, 1);
-    setItems(newItems);
+    dispatch({ type: REMOVE_ITEM, payload: itemIndex });
   };
 
-  const handleAddItem = () => {
-    setErrors([]);
-    let errorList = [];
+  const formValidationErrors = (
+    newItem: any,
+    clientId: string
+  ): FormValidationErrors => {
+    let errorList: FormValidationErrors = [];
 
     if (!newItem.description) {
-      errorList.push("Description is required.");
+      errorList.push({ field: "items", message: "Description is required." });
     }
 
-    if (!clientId.value) {
-      errorList.push("Client is required.");
+    if (!clientId) {
+      errorList.push({ field: "clientId", message: "Client is required." });
     }
 
     if (
       newItem.value.toString().trim() === "" ||
       isNaN(Number(newItem.value))
     ) {
-      errorList.push("Value is required.");
+      errorList.push({ field: "items", message: "Value is required." });
     }
 
-    if (errorList.length > 0) {
-      setErrors(errorList);
+    return errorList;
+  };
+
+  const validateAndAddItem = () => {
+    // Validate the new item and the client ID
+    const validationErrors = formValidationErrors(
+      state.newItem,
+      state.formData.clientId
+    );
+
+    if (validationErrors.length > 0) {
+      dispatch({ type: "SET_ERRORS", payload: validationErrors });
       return;
     }
 
-    setItems([...items, { ...newItem, value: Number(newItem.value) }]);
-    setNewItem({ description: "", value: 0 });
+    dispatch({
+      type: ADD_ITEM,
+      payload: { ...state.newItem, value: Number(state.newItem.value) },
+    });
+
+    dispatch({ type: SET_NEW_ITEM, payload: { description: "", value: 0 } });
   };
 
   const totalAmount =
-    items.reduce((acc, item) => acc + Number(item.value), 0) || 0;
+    state.items.reduce((acc, item) => acc + Number(item.value), 0) || 0;
 
-  return (
+  const isDataLoading = state.currencies.length > 0
+
+  return isDataLoading ? (
     <div className="max-w-lg mx-auto">
       <Heading title={id ? "Edit Invoice" : "Create Invoice"} />
       <form className="mx-auto max-w-7xl" onSubmit={handleSubmit}>
@@ -156,10 +272,11 @@ function InvoiceForm() {
               name="status"
               className="mt-2 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-cyan-600 sm:text-sm sm:leading-6"
             >
-              <option value="unpaid">
-                Unpaid
-              </option>
-              <option value="paid">Paid</option>
+              {STATUSES.map((status: string) => (
+                <option key={status} value={status}>
+                  {capitalizeFirstLetter(status)}
+                </option>
+              ))}
             </select>
           </div>
           <div>
@@ -176,7 +293,7 @@ function InvoiceForm() {
               required
               className="mt-2 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-cyan-600 sm:text-sm sm:leading-6"
             >
-              {CURRENCY_OPTIONS.map(
+              {state.currencies.map(
                 (currency: { value: string; label: string }) => (
                   <option key={currency.value} value={currency.value}>
                     {currency.label}
@@ -231,7 +348,7 @@ function InvoiceForm() {
               />
               <button
                 type="button"
-                onClick={handleAddItem}
+                onClick={validateAndAddItem}
                 className="rounded-md bg-cyan-600 px-3 sm:ml-1 py-2 text-sm font-semibold text-white shadow-sm hover:bg-cyan-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600 flex flex-1 justify-center sm:max-w-[120px]"
               >
                 <PlusIcon className="h-5 w-5" aria-hidden="true" />
@@ -239,8 +356,8 @@ function InvoiceForm() {
               </button>
             </div>
           </div>
-          {items.length ? (
-          <div className="col-span-full">
+          {state.items.length ? (
+            <div className="col-span-full">
               <div>
                 <table className="min-w-full divide-y divide-gray-300">
                   <thead>
@@ -264,7 +381,7 @@ function InvoiceForm() {
                     </tr>
                   </thead>
                   <tbody className="bg-white">
-                    {items.map((item, index) => (
+                    {state.items.map((item, index) => (
                       <tr key={index} className="even:bg-gray-50">
                         <td className="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-3">
                           {item.description}
@@ -305,7 +422,7 @@ function InvoiceForm() {
                   </tbody>
                 </table>
               </div>
-          </div>
+            </div>
           ) : (
             ""
           )}
@@ -328,7 +445,6 @@ function InvoiceForm() {
           </div>
         </div>
 
-       
         <div className="mt-6 flex items-center justify-end gap-x-6">
           <button
             type="button"
@@ -344,18 +460,18 @@ function InvoiceForm() {
             Save
           </button>
         </div>
-        {errors && errors.length > 0 && (
+        {state.errors && state.errors.length > 0 && (
           <div className="border p-5 rounded-md border-neutral-300 bg-red-100/10 text-red-500 mt-2">
             <ul>
-              {errors.map((error, index) => (
-                <li key={index}>{error}</li>
+              {state.errors.map((error, index) => (
+                <li key={index}>{error.message}</li>
               ))}
             </ul>
           </div>
         )}
       </form>
     </div>
-  );
+  ) : <LoadingSpinner />;
 }
 
 export default InvoiceForm;

@@ -3,20 +3,40 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { StoreTypes } from "@/types";
-import { PROFILE, INVOICE_DATA, CLIENT } from "@/constants";
-import InvoiceViewer from "@/app/invoices/components/InvoiceViewer";
+import { useState, useEffect } from "react";
+import { fetchAllData } from "@/hooks/fetchAllData";
+import dynamic from "next/dynamic";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { Invoice, Client, Profile } from '@/types/index'; // Replace with your actual path to types
+
+const InvoiceViewer = dynamic(() => import("@/app/invoices/components/InvoiceViewer"), {
+  ssr: false,
+  loading: LoadingSpinner,
+});
+
+interface FetchedData {
+  invoiceData: Invoice;
+  clientData: Client;
+  profileData: Profile;
+}
 
 export default function Page() {
   const router = useRouter();
-  const isAuthenticated = useSelector((state: StoreTypes) => {
-    return state.auth.user.isAuthenticated;
-  });
+  const [data, setData] = useState<FetchedData | null>(null);
+  const isAuthenticated = useSelector((state: StoreTypes) => state.auth.user.isAuthenticated);
 
-  if (isAuthenticated) {
-    router.push("/invoices");
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push("/invoices");
+    }
+  }, [isAuthenticated, router]);
 
-  
+  useEffect(() => {
+    (async () => {
+      const fetchedData = await fetchAllData();
+      setData(fetchedData);
+    })();
+  }, []);
 
   return (
     <div className="bg-white">
@@ -45,16 +65,18 @@ export default function Page() {
           
         </div>
       </div>
-      <InvoiceViewer 
-        exportJpg={() => {}}
-        exportPdf={() => {}}
-        hasExport={false}
-        currentDate="2023-09-26"
-        profile={PROFILE}
-        client={CLIENT}
-        total={5050}
-        invoiceData={INVOICE_DATA} 
-      />
+        {data && (
+          <InvoiceViewer 
+            exportJpg={() => {}}
+            exportPdf={() => {}}
+            hasExport={false}
+            currentDate="2023-09-26"
+            profile={data.profileData}
+            client={data.clientData}
+            total={5050}
+            invoiceData={data.invoiceData} 
+          />
+        )}
     </div>
   );
 }

@@ -1,6 +1,11 @@
-import { Invoice, Client } from "@/types"	
+import { Invoice, Client, Currency } from "@/types"	
 
-export const CURRENCY_OPTIONS = [
+export const STATUSES: string[] = [
+    'unpaid',
+    'paid',
+]
+
+export const CURRENCY_OPTIONS: Currency[] = [
     { value: 'USD', label: 'USD' },
     { value: 'EUR', label: 'EUR' },
     { value: 'BRL', label: 'BRL'},

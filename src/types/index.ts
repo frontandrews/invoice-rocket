@@ -8,6 +8,11 @@ export interface Client {
     details: string;
 }
 
+export interface Currency {
+    value: string;
+    label: string;
+}
+
 export interface InvoiceItem {
     description: string;
     value: number;
@@ -53,7 +58,7 @@ export interface StoreTypes {
 }
 
 export interface InvoiceViewerProps {
-    invoiceData?: Invoice,
+    invoiceData?: Invoice | null,
     exportPdf: () => void,
     exportJpg: () => void,
     currentDate: string,
