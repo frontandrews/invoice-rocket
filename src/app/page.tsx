@@ -73,7 +73,7 @@ export default function Page() {
             currentDate="2023-09-26"
             profile={data.profileData}
             client={data.clientData}
-            total={5050}
+            total={5000}
             invoiceData={data.invoiceData} 
           />
         )}
