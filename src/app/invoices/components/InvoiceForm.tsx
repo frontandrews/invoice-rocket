@@ -1,6 +1,5 @@
 "use client";
-import { useState, useEffect, useReducer, Reducer } from "react";
-import useFormInput from "@/hooks/useFormInput";
+import { useEffect, useReducer, Reducer } from "react";
 import { PlusIcon, TrashIcon } from "@heroicons/react/20/solid";
 import { useRouter, useParams } from "next/navigation";
 import { formatCurrency } from "@/utils/helper";
@@ -12,6 +11,7 @@ import { StoreTypes, InvoiceItem, Currency } from "@/types";
 import { fetchCurrencies } from "@/hooks/fetchCurrencies";
 import { STATUSES } from "@/constants";
 import { capitalizeFirstLetter } from "@/utils/helper";
+import { useNotification } from "@/app/providers/NotificationProvider";
 import LoadingSpinner from "@/components/common/LoadingSpinner";
 
 const SET_FORM_DATA = "SET_FORM_DATA";
@@ -57,26 +57,15 @@ type InvoiceActions = {
 };
 
 function InvoiceForm() {
+  const { id } = useParams();
   const router = useRouter();
   const reduxDispatch = useDispatch();
-  const { id } = useParams();
-
- 
-
   const initialValues = useSelector((state: StoreTypes) =>
     state.invoices.find((invoice) => invoice.id === id)
   );
   const currentDate = new Date().toISOString().slice(0, 10);
-  const clientId = useFormInput<string>(initialValues?.clientId || "");
   const clients = useSelector((state: StoreTypes) => state.clients || []);
-  const currency = useFormInput<string>(initialValues?.currency || "USD");
-  const dueDate = useFormInput<string>(initialValues?.dueDate || currentDate);
-  const details = useFormInput<string>(initialValues?.details || "");
-  const [newItem, setNewItem] = useState<InvoiceItem>({
-    description: "",
-    value: 0,
-  });
-  const status = useFormInput<string>(initialValues?.status || "unpaid");
+  const { addNotification } = useNotification();
 
   const invoiceReducer = (state: InvoiceState, action: InvoiceActions): InvoiceState => {
     switch (action.type) {
@@ -145,17 +134,23 @@ function InvoiceForm() {
     }
 
     const formData = {
-      clientId: clientId.value,
-      currency: currency.value,
+      clientId: state.formData.clientId,
+      currency: state.formData.currency,
       items: state.items,
-      dueDate: dueDate.value,
-      details: details.value,
-      status: status.value || "unpaid",
+      dueDate: state.formData.dueDate,
+      details: state.formData.details,
+      status: state.formData.status || "unpaid",
     };
 
     if (id) {
       // @ts-expect-error: TODO: fix this type error
       reduxDispatch(updateInvoice({ id, ...formData }));
+
+      addNotification({
+        title: "Your invoice has been updated",
+        type: "success",
+      });
+
       router.push("/invoices");
       return;
     } else {
@@ -166,6 +161,10 @@ function InvoiceForm() {
           ...formData,
         })
       );
+      addNotification({
+        title: "Your invoice has been created",
+        type: "success",
+      });
       router.push("/invoices");
     }
   };
@@ -221,7 +220,7 @@ function InvoiceForm() {
   const totalAmount =
     state.items.reduce((acc, item) => acc + Number(item.value), 0) || 0;
 
-  const isDataLoading = state.currencies.length > 0
+  const isDataLoading = state.currencies.length  > 0
 
   return isDataLoading ? (
     <div className="max-w-lg mx-auto">
@@ -247,7 +246,10 @@ function InvoiceForm() {
               </button>
             </div>
             <select
-              {...clientId}
+              value={state.formData.clientId}
+              onChange={(e) =>
+                dispatch({ type: SET_FORM_DATA, payload: { ...state.formData, clientId: e.target.value } })
+              }
               name="clientId"
               required
               className="mt-2 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-cyan-600 sm:text-sm sm:leading-6"
@@ -268,7 +270,10 @@ function InvoiceForm() {
               Status
             </label>
             <select
-              {...status}
+              value={state.formData.status}
+              onChange={(e) =>
+                dispatch({ type: SET_FORM_DATA, payload: { ...state.formData, status: e.target.value } })
+              }
               name="status"
               className="mt-2 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-cyan-600 sm:text-sm sm:leading-6"
             >
@@ -287,8 +292,10 @@ function InvoiceForm() {
               Currency
             </label>
             <select
-              value={currency.value}
-              onChange={currency.onChange}
+              value={state.formData.currency}
+              onChange={(e) =>
+                dispatch({ type: SET_FORM_DATA, payload: { ...state.formData, currency: e.target.value } })
+              }
               name="currency"
               required
               className="mt-2 block w-full rounded-md border-0 py-1.5 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-cyan-600 sm:text-sm sm:leading-6"
@@ -311,7 +318,10 @@ function InvoiceForm() {
             </label>
             <div className="mt-2">
               <input
-                {...dueDate}
+                value={state.formData.dueDate}
+                onChange={(e) =>
+                  dispatch({ type: SET_FORM_DATA, payload: { ...state.formData, dueDate: e.target.value } })
+                }
                 required
                 name="dueDate"
                 type="date"
@@ -330,19 +340,19 @@ function InvoiceForm() {
             </label>
             <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0">
               <input
-                value={newItem.description}
+                value={state.newItem.description}
                 onChange={(e) =>
-                  setNewItem({ ...newItem, description: e.target.value })
+                  dispatch({ type: SET_NEW_ITEM, payload: { ...state.newItem, description: e.target.value } })
                 }
                 placeholder="Description"
                 className="mr-0 sm:mr-2 rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-cyan-600 sm:text-sm sm:leading-6 flex-1"
               />
               <input
-                value={newItem.value}
-                type="number"
+                value={state.newItem.value}
                 onChange={(e) =>
-                  setNewItem({ ...newItem, value: Number(e.target.value) })
+                  dispatch({ type: SET_NEW_ITEM, payload: { ...state.newItem, value: Number(e.target.value) } })
                 }
+                type="number"
                 placeholder="Value"
                 className="rounded-md border-0 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-cyan-600 sm:text-sm sm:leading-6 flex-1"
               />
@@ -389,7 +399,7 @@ function InvoiceForm() {
                         <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                           {item.value === 0
                             ? "Free"
-                            : formatCurrency(item.value, currency.value)}
+                            : formatCurrency(item.value, state.formData.currency)}
                         </td>
                         <td className="whitespace-nowrap py-4 text-center flex flex-1 space-x-2 justify-center">
                           <button
@@ -416,7 +426,7 @@ function InvoiceForm() {
                       <td className="whitespace-nowrap py-4 text-center flex flex-1 space-x-2 justify-center">
                         {totalAmount === 0
                           ? "Free"
-                          : formatCurrency(totalAmount, currency.value)}
+                          : formatCurrency(totalAmount, state.formData.currency)}
                       </td>
                     </tr>
                   </tbody>
@@ -436,7 +446,10 @@ function InvoiceForm() {
             </label>
             <div className="mt-2">
               <textarea
-                {...details}
+                value={state.formData.details}
+                onChange={(e) =>
+                  dispatch({ type: SET_FORM_DATA, payload: { ...state.formData, details: e.target.value } })
+                }
                 name="details"
                 rows={3}
                 className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-cyan-600 sm:text-sm sm:leading-6"

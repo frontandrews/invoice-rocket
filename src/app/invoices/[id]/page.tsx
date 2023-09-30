@@ -1,18 +1,20 @@
 "use client";
 import withAuth from "@/hocs/withAuth";
 import { useSelector } from "react-redux";
-import { useParams } from "next/navigation";
 import html2canvas from "html2canvas";
 import { StoreTypes } from "@/types";
 import dynamic from "next/dynamic"; 
 import Loading from "@/components/common/LoadingSpinner";	
+import { useParams } from "next/navigation";
 
 const InvoiceViewer = dynamic(() => import("../components/InvoiceViewer"), {
   ssr: false,
   loading: Loading,
 });
 
-function Profile() {
+function Invoices() {
+  const { id } = useParams();
+
   const exportPdf = () => {
     const invoiceView = document.getElementById("invoice-view");
     // @ts-expect-error imported as Script tag on layout.tsx
@@ -34,7 +36,6 @@ function Profile() {
     }
   };
 
-  const { id } = useParams();
   const currentDate = new Date().toISOString().slice(0, 10);
 
   const profile = useSelector((state: StoreTypes) => state.profile);
@@ -62,4 +63,4 @@ function Profile() {
   );
 }
 
-export default withAuth(Profile);
+export default withAuth(Invoices);

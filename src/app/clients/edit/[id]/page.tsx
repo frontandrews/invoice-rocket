@@ -9,6 +9,8 @@ import { StoreTypes } from "@/types";
 
 function EditClientPage() {
   const router = useRouter();
+  
+  // We can use the params from the page, but it's generating conflicts in build command, it need more investigation.
   const { id } = useParams();
 
   const initialValues = useSelector((state: StoreTypes) => selectClientById(state, id));
