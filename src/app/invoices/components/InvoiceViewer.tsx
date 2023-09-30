@@ -19,8 +19,6 @@ export function InvoiceViewer(props: InvoiceViewerProps) {
     hasExport = true
   } = props;
 
-  console.log('profile', profile)
-
   const buttonOptions = [
     { name: "Export PDF", icon: DocumentArrowDownIcon, onClick: exportPdf },
     { name: "Export JPG", icon: DocumentArrowDownIcon, onClick: exportJpg },
