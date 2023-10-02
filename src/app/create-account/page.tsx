@@ -30,14 +30,11 @@ export default function CreateAccount() {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
     try {
-      // Create the user account
       await createUserWithEmailAndPassword(auth, email, password);
 
       // @ts-expect-error: TODO: fix this type error
       // Dispatch the logInAsync action to sign in with the created account
       await dispatch(logInAsync({ auth, email, password })).unwrap();
-
-      router.push("/invoices");
     } catch (error: any) {
       console.log(error.code)
       setErrorCode(error.code)

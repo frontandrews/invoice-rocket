@@ -1,20 +1,16 @@
 import React, { useEffect } from "react";
 import { redirect } from "next/navigation";
-import { useAuthState } from "@/hooks/useAuthState";
-import { app } from "@/firebase/clientApp";
+import { useSelector } from "react-redux";
+import { StoreTypes } from "@/types";
 
 export default function withAuth(Component: React.ComponentType) {
   return function AuthenticatedComponent(props: any) {
-    const isAuthenticated = useAuthState(app);
+    const isAuthenticated = useSelector((state: StoreTypes) => state.auth.user.isAuthenticated);
 
     useEffect(() => {
-      const timer = setTimeout(() => {
         if (!isAuthenticated) {
           redirect("/login");
         }
-      }, 0);
-    
-      return () => clearTimeout(timer);
     }, [isAuthenticated]);
 
     return <Component {...props} />;

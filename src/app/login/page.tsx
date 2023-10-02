@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { app } from "@/firebase/clientApp";
 import ErrorMessageByAuthCode from "@/components/common/ErrorMessageByAuthCode";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/20/solid";
-import { useAuthState } from '@/hooks/useAuthState';
+import { StoreTypes } from "@/types";
 
 function LoginPage() {
   const [email, setEmail] = useState("");
@@ -16,6 +16,13 @@ function LoginPage() {
   const [errorCode, setErrorCode] = useState("");
   const dispatch = useDispatch();
   const router = useRouter(); 
+  const isAuthenticated = useSelector((state: StoreTypes) => state.auth.user.isAuthenticated);
+
+  useEffect(() => {
+    if(isAuthenticated) {
+      router.push('/invoices');
+    }
+  }, [isAuthenticated, router])
 
   const auth = getAuth(app);
 
@@ -25,13 +32,8 @@ function LoginPage() {
       // @ts-expect-error: TODO: fix this type error
       const action = dispatch(logInAsync({ auth, email, password }));
   
-      const result = await action.unwrap();
+      await action.unwrap();
   
-      if (result.id) {
-        router.push('/invoices');
-      } else {
-        console.error("Login failed");
-      }
     } catch (error: any) {
       setErrorCode(error.code);
       console.error("Login or account creation failed", error);
